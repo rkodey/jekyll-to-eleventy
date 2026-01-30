@@ -9,6 +9,8 @@ import proc_node from 'node:child_process';
         source: String.raw `..\jekyll-theme-chirpy`,
         dest: String.raw `.`,
     };
+    // "build:purgecss": "node scripts/purgecss.js",
+    // "build:sass": "sass _sass:_site/assets/css --style=compressed",
     // const site  = yaml.load(
     //   fs_node.readFileSync( path_node.resolve('_data', 'site.yml'), 'utf8' )
     // );
@@ -47,6 +49,36 @@ import proc_node from 'node:child_process';
         fs_node.writeFileSync(outFile, content, 'utf8');
         console.log(outFile, content.length);
     }
+    function copyFilterOnlyChanged(src, dest) {
+        const sStat = fs_node.statSync(src, { throwIfNoEntry: false });
+        const dStat = fs_node.statSync(dest, { throwIfNoEntry: false });
+        // console.log('copyFilterOnlyChanged', src, dest, !!sStat, !!dStat, sStat.isDirectory(), sStat.size, dStat.size, sStat.mtimeMs, dStat.mtimeMs);
+        const ret = (() => {
+            if (!sStat)
+                return false;
+            if (sStat.isDirectory())
+                return true;
+            if (!dStat)
+                return true;
+            if (sStat.size !== dStat.size)
+                return true;
+            if (Math.abs(sStat.mtimeMs - dStat.mtimeMs) > 1000)
+                return true;
+            return false;
+        })();
+        if (ret && !(sStat?.isDirectory()))
+            console.log('  copy', src, '=>', dest);
+        return ret;
+    }
+    function mirror({ src, dest, fRecursive = true, fOnlyChanged = true }) {
+        console.log('mirror', src.padEnd(CONF.source.length + 14), '=>', dest);
+        const sStat = fs_node.statSync(src, { throwIfNoEntry: false });
+        const dStat = fs_node.statSync(dest, { throwIfNoEntry: false });
+        if (!sStat)
+            return;
+        // if (!dStat?.isDirectory()) fs_node.mkdirSync(dest, { recursive: true });
+        fs_node.cpSync(src, dest, { recursive: fRecursive, preserveTimestamps: true, filter: fOnlyChanged ? copyFilterOnlyChanged : undefined });
+    }
     // scanDir({
     //   path          : String.raw `${CONF.source}\_includes`,
     //   callbackFile  : patchLiquidTemplate,
@@ -55,18 +87,18 @@ import proc_node from 'node:child_process';
     //   path          : String.raw `${CONF.source}\_layouts`,
     //   callbackFile  : patchLiquidTemplate,
     // });
-    exec(String.raw `robocopy /mir  ${CONF.source}\_includes    ${CONF.dest}\_includes`);
-    exec(String.raw `robocopy /mir  ${CONF.source}\_layouts     ${CONF.dest}\_layouts`);
-    exec(String.raw `robocopy /mir  ${CONF.source}              ${CONF.dest}\scripts          purgecss.js`);
-    exec(String.raw `robocopy /mir  ${CONF.source}\_data        ${CONF.dest}\_data\site\data`);
-    exec(String.raw `copy           ${CONF.source}\_config.yml  ${CONF.dest}\_data\site.example.yml`);
-    exec(String.raw `copy           ${CONF.current}\_config.yml ${CONF.dest}\_data\site.yml`);
-    exec(String.raw `robocopy /mir  ${CONF.source}\_sass        ${CONF.dest}\_sass`);
-    exec(String.raw `robocopy /mir  ${CONF.source}\_posts       ${CONF.dest}\content\posts`);
-    exec(String.raw `copy           ${CONF.source}\index.html   ${CONF.dest}\content\index.md`);
-    exec(String.raw `robocopy /mir  ${CONF.current}\assets      ${CONF.dest}\content\assets`);
+    mirror({ src: path_node.join(CONF.source, '_includes'), dest: path_node.join(CONF.dest, '_includes') });
+    mirror({ src: path_node.join(CONF.source, '_layouts'), dest: path_node.join(CONF.dest, '_layouts') });
+    mirror({ src: path_node.join(CONF.source, '_data'), dest: path_node.join(CONF.dest, '_data', 'site', 'data') });
+    mirror({ src: path_node.join(CONF.source, '_sass'), dest: path_node.join(CONF.dest, '_sass') });
+    mirror({ src: path_node.join(CONF.source, '_posts'), dest: path_node.join(CONF.dest, 'content', 'posts') });
+    mirror({ src: path_node.join(CONF.source, '_config.yml'), dest: path_node.join(CONF.dest, '_data', 'site.example.yml') });
+    mirror({ src: path_node.join(CONF.source, 'purgecss.js'), dest: path_node.join(CONF.dest, 'scripts', 'purgecss.js') });
+    mirror({ src: path_node.join(CONF.source, 'index.html'), dest: path_node.join(CONF.dest, 'content', 'index.md') });
+    mirror({ src: path_node.join(CONF.current, 'assets'), dest: path_node.join(CONF.dest, 'content', 'assets') });
+    mirror({ src: path_node.join(CONF.current, '_config.yml'), dest: path_node.join(CONF.dest, '_data', 'site.yml') });
     // console.log(SiteConfig);
-    exec(String.raw `node purgecss.js`);
+    exec(String.raw `node scripts/purgecss.js`);
     // exec(String.raw `pnpm exec sass content/assets/css:_site/assets/css`, '-I _sass', SiteConfig?.sass?.style ? `--style=${SiteConfig?.sass?.style}` : '');
     // exec(String.raw `pnpm exec sass _sass:_site/assets/css`, SiteConfig?.sass?.style ? `--style=${SiteConfig?.sass?.style}` : '');
     // fs_node.renameSync(String.raw `_site/assets/css/main.css`, String.raw `_site/assets/css/jekyll-theme-chirpy.css`);
