@@ -1,0 +1,27 @@
+{
+  // "extends": "../lib/tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "src/.tsbuildinfo",
+    "target": "ES2020",
+    "types": ["node"],
+    "rootDir": "src",
+    "outDir": "scripts",
+    "moduleResolution": "Node",
+
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictNullChecks": true,
+    // "allowJs": true,
+    // "checkJs": true,
+
+    // "resolveJsonModule": true
+    // "noUncheckedIndexedAccess": false,
+    // "exactOptionalPropertyTypes": false,
+  },
+  // "exclude": ["*.mjs"]
+  // "include": ["src/**/*.ts"]
+}

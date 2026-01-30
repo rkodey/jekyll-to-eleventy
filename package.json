@@ -1,0 +1,50 @@
+{
+  "name": "chirp11ty",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "author": "Rob Kodey",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "convert": "node scripts/convert.js",
+    "clean": "rm -rf _data _includes _layouts _sass _site content scripts",
+    "rebuild": "pnpm run clean && pnpm run build && pnpm run convert",
+    "build": "tsc",
+    "build:eleventy": "eleventy",
+    "dev": "eleventy --serve"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^2.0.0",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "~9.39.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/luxon": "^3.7.1",
+    "@types/markdown-it": "^14.1.2",
+    "@types/markdown-it-emoji": "^3.0.1",
+    "@types/node": "~22.18.0",
+    "bootstrap": "^5.3.8",
+    "eslint": "~9.39.1",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-no-secrets": "^2.2.1",
+    "eslint-plugin-unicorn": ">=60.0.0",
+    "globals": "^16.5.0",
+    "js-yaml": "^4.1.1",
+    "liquidjs": "^10.24.0",
+    "luxon": "^3.7.2",
+    "purgecss": "^7.0.2",
+    "sass": "^1.97.2",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.48.0"
+  },
+  "dependencies": {
+    "@11ty/eleventy": "^3.1.2",
+    "@11ty/eleventy-img": "^6.0.4",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.2",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.0",
+    "markdown-it-emoji": "^3.0.0"
+  }
+}
