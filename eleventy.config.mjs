@@ -11,8 +11,10 @@ import  markdownIt                  from 'markdown-it';
 import  markdownItAnchor            from 'markdown-it-anchor';
 import  { full as markdownItEmoji } from 'markdown-it-emoji';
 
+/** @import * as eleventy           from './src/eleventy.types' */
 
-/** @param { import('./src/eleventy.types').UserConfig } eleventyConfig */
+
+/** @param { eleventy.UserConfig } eleventyConfig */
 const conf = (eleventyConfig) => {
 
   const CONFIG = {
@@ -25,6 +27,7 @@ const conf = (eleventyConfig) => {
     markdownTemplateEngine: false,
   }
 
+  eleventyConfig.setUseGitIgnore(false);
   eleventyConfig.addPlugin(syntaxHighlight);
   eleventyConfig.addPassthroughCopy('content/assets');
   eleventyConfig.addDataExtension('yml,yaml', (contents, filePath) => yaml.load(contents));
@@ -132,19 +135,17 @@ const conf = (eleventyConfig) => {
   //   };
   // });
 
-
-  eleventyConfig.addLiquidTag('include_cached', function (liquidEngine) {
+  /**
+   * @param   { string }          name
+   * @param   { import('./src/eleventy.types').Liquid } liquidEngine
+   * @returns { import('./src/eleventy.types').LiquidTag }
+   * */
+  function includeTag(name, liquidEngine) {
     return {
       parse: function (tagToken) {
-        // console.log('--> include_cached parse', this.args, tagToken.args);
-        this.args = tagToken.args;
-      },
-      render: function (context, hash) {
-        // console.log('--> include_cached render context', context);
-        // console.log('--> include_cached render hash', hash);
-        console.log('--> include_cached render args', this.args);
+        // console.log('--> include parse', this.args, tagToken.args);
 
-        const tokenizer = new Tokenizer(this.args ?? '');
+        const tokenizer = new Tokenizer(tagToken.args);
         let   value;
         const args = [];
         while ((value = tokenizer.readValue()) !== undefined) {
@@ -152,24 +153,53 @@ const conf = (eleventyConfig) => {
           tokenizer.skipBlank();
           while (tokenizer.peek() === ',') tokenizer.advance();
         }
-        console.log('--> include_cached render items', args);
+        console.log(`--> ${name} parse args`, args);
 
+        this.args = args;
+      },
+      render: function (context, hash) {
+
+        /** @type { string[] } */
+        const args = this.args ?? [];
+
+        // console.log(`--> ${name} render context`, context);
+        // console.log(`--> ${name} render hash`, hash);
+        // console.log(`--> ${name} render args`, args);
+
+        const file  = args[0];
+        const path  = path_node.join(CONFIG.dir.includes, file);
+        context.globals.include ??= {};
+        context.globals.include.file = file;
+        context.globals.include.path = path;
+
+        for (const arg of args) {
+          const value = String(liquidEngine.evalValueSync(arg, context) ?? '');
+          if (value) {
+            context.globals.include[arg] = value;
+          }
+        }
         // const values = args.map((token) => liquidEngine.evalValueSync(token, context));
-        // console.log('--> include_cached render values', values);
 
-        const includePath = path_node.join(CONFIG.dir.includes, args[0]);
-        console.log('--> include_cached render includePath', includePath);
+        // console.log(`--> ${name} render context.globals`, context.globals);
 
         try {
           /** @type { unknown } */
-          const ret = liquidEngine.renderFileSync(includePath, context);
+          const ret = liquidEngine.renderFileSync(path, context);
           return ret
         }
         catch (error) {
-          console.error('[include_cached] Error rendering', includePath, error);
+          console.error(`${name} Error rendering`, path, error);
         }
       },
     };
+  }
+
+  eleventyConfig.addLiquidTag('include', function (liquidEngine) {
+    return includeTag('include', liquidEngine);
+  });
+
+  eleventyConfig.addLiquidTag('include_cached', function (liquidEngine) {
+    return includeTag('include_cached', liquidEngine);
   });
 
   eleventyConfig.addLiquidTag('seo', function (liquidEngine) {

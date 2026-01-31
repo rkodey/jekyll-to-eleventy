@@ -1,1 +1,1 @@
-export {};
+export { Liquid } from 'liquidjs';
