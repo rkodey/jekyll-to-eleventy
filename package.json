@@ -7,12 +7,12 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "convert": "node scripts/convert.js",
+    "convert": "tsc --build && node scripts/convert.js",
     "clean": "rm -rf _data _includes _layouts _sass _site content scripts",
     "rebuild": "pnpm run clean && pnpm run build && pnpm run convert",
-    "build": "tsc",
+    "build": "tsc --build && set DEBUG=Eleventy* && eleventy",
     "build:eleventy": "eleventy",
-    "dev": "eleventy --serve"
+    "dev": "set DEBUG=Eleventy* && eleventy --serve"
   },
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",
@@ -26,6 +26,7 @@
     "@types/markdown-it": "^14.1.2",
     "@types/markdown-it-emoji": "^3.0.1",
     "@types/node": "~22.18.0",
+    "bootstrap": "^5.3.8",
     "eslint": "~9.39.1",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-import-resolver-typescript": "^4.4.4",
