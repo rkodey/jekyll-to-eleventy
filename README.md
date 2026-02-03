@@ -4,9 +4,11 @@ Jekyll -> *11ty* <br>
 https://github.com/rkodey/Jekyll-to-Eleventy
 
 **Work in progress** on migrating a Jekyll Liquid theme to Eleventy Liquid,
-( hopefully ) using only configuration without rewriting or filtering templates or includes.
+using configuration and ( _almost <sup><small>tm</small></sup>_ ) no rewriting of templates and includes.
 
 Starting with [Chirpy Jekyll Theme](https://github.com/cotes2020/jekyll-theme-chirpy), but maybe it can be generalized.
+
+_*almost_: Chirpy appears to have a minor syntax bug that I'll report later...
 
 <br>
 
