@@ -1,20 +1,8 @@
 // @ts-check
-import  path_node                   from 'node:path';
-// import  url_node                    from 'node:url';
-
-import  * as luxon                  from 'luxon';
-import  * as sass                   from 'sass';
-import  * as yaml                   from 'js-yaml';
-import  { Tokenizer }               from 'liquidjs';
-import  syntaxHighlight             from '@11ty/eleventy-plugin-syntaxhighlight';
-import  markdownIt                  from 'markdown-it';
-import  markdownItAnchor            from 'markdown-it-anchor';
-import  { full as markdownItEmoji } from 'markdown-it-emoji';
-
-/** @import * as eleventy           from './src/eleventy.types' */
+import  * as jeky11ty               from './scripts/jeky11ty.js';
 
 
-/** @param { eleventy.UserConfig } eleventyConfig */
+/** @param { jeky11ty.UserConfig } eleventyConfig */
 const conf = (eleventyConfig) => {
 
   const CONFIG = {
@@ -27,222 +15,72 @@ const conf = (eleventyConfig) => {
     markdownTemplateEngine: false,
   }
 
-  eleventyConfig.setUseGitIgnore(false);
-  eleventyConfig.addPlugin(syntaxHighlight);
   eleventyConfig.addPassthroughCopy('content/assets');
-  eleventyConfig.addDataExtension('yml,yaml', (contents, filePath) => yaml.load(contents));
+  eleventyConfig.setUseGitIgnore(false);
 
   eleventyConfig.setLiquidOptions({
-    jekyllInclude     : true,   // allow "=" syntax
-    jekyllWhere       : true,
-    dynamicPartials   : false,
-    strictFilters     : false,  // undefined filters get skipped
-    // keyValueSeparator : '=',
+  //   jekyllInclude     : true,   // allow "=" syntax
+  //   jekyllWhere       : true,
+    // dynamicPartials   : false,
+    strictFilters     : true
+  //   // keyValueSeparator : '=',
   });
 
-  eleventyConfig.setLibrary(
-    'md',
-    markdownIt({
-      html: true,
-      xhtmlOut: true,
-      // linkify: true,
-      // typographer: true,
-    })
-      .use(markdownItAnchor)
-      .use(markdownItEmoji),
-  );
+  eleventyConfig.addPlugin(jeky11ty.getSyntaxHighlightPlugin());
+  eleventyConfig.setLibrary('md', jeky11ty.getMarkdownIt());
 
-  eleventyConfig.addDateParsing((dateValue) => {
-    console.log(`--> addDateParsing [${dateValue}]`);
-    if (!dateValue) return;
-    // date: 2019-08-08 11:33:00 +0800
-    return luxon.DateTime.fromFormat(dateValue, 'yyyy-MM-dd hh:mm:ss ZZZ');
+  eleventyConfig.addCollection('posts', (collection) => {
+    return collection.getFilteredByGlob('content/posts/**/*.md');
   });
-
-  // eleventyConfig.addFilter(
-  //   'absolute_url',
-  //   /** @param { string } pageUrl */
-  //   (pageUrl) => {
-  //     // const path = path_node.relative(pageUrl, config);
-  //     const temp = `--> absolute_url ${pageUrl}`;
-  //     console.log(temp);
-  //     return temp;
-  //   },
-  // );
-
-  // eleventyConfig.addFilter(
-  //   'relative_url',
-  //   /**
-  //    * @param    { string } [pageUrl]
-  //    * @returns  { string }
-  //    * */
-  //   (pageUrl) => {
-  //     const path = url_node.resolve('', pageUrl ?? '');   // @TODO baseurl
-  //     console.log(`--> relative_url [${path}]`);
-  //     return path;
-  //   },
-  // );
-
-  // eleventyConfig.addShortcode(
-  //   'include_cached',
-  //   /** @param { string } arg1 */
-  //   (arg1) => {
-  //     const temp = `--> include_cached ${arg1}`;
-  //     console.log(temp);
-  //     return temp;
-  //   },
-  // );
-
-  // eleventyConfig.addShortcode(
-  //   'seo',
-  //   /** @param { string } title */
-  //   (title) => {
-  //     const temp = `--> seo ${title}`;
-  //     console.log(temp);
-  //     return temp;
-  //   },
-  // );
-
-  // eleventyConfig.addLiquidTag('include', (liquidEngine) => {
-  //   return {
-  //     parse: (tagToken, remainingTokens) => {
-  //       // this.str = tagToken.args; // myVar or "alice"
-  //       console.log('--> include_cached tag parse', tagToken.args);
-  //     },
-  //     render: (context, hash) => {
-  //       // // Resolve variables
-  //       // var str = await this.liquid.evalValue(this.str, context); // "alice"
-  //       // return str.toUpperCase(); // "ALICE"
-  //       // console.log('--> include_cached tag render', context, hash);
-  //       return '--> include_cached tag render';
-  //     },
-  //   };
-  // });
-
-  // eleventyConfig.addLiquidTag('include_cached', (liquidEngine) => {
-  //   return {
-  //     parse: (tagToken, remainingTokens) => {
-  //       // this.str = tagToken.args; // myVar or "alice"
-  //       console.log('--> include_cached tag parse', tagToken.args);
-  //     },
-  //     render: (context, hash) => {
-  //       // // Resolve variables
-  //       // var str = await this.liquid.evalValue(this.str, context); // "alice"
-  //       // return str.toUpperCase(); // "ALICE"
-  //       // console.log('--> include_cached tag render', context, hash);
-  //       return '--> include_cached tag render';
-  //     },
-  //   };
-  // });
-
-  /**
-   * @param   { string }          name
-   * @param   { import('./src/eleventy.types').Liquid } liquidEngine
-   * @returns { import('./src/eleventy.types').LiquidTag }
-   * */
-  function includeTag(name, liquidEngine) {
-    return {
-      parse: function (tagToken) {
-        // console.log('--> include parse', this.args, tagToken.args);
-
-        const tokenizer = new Tokenizer(tagToken.args);
-        let   value;
-        const args = [];
-        while ((value = tokenizer.readValue()) !== undefined) {
-          args.push(value.getText());
-          tokenizer.skipBlank();
-          while (tokenizer.peek() === ',') tokenizer.advance();
-        }
-        console.log(`--> ${name} parse args`, args);
-
-        this.args = args;
-      },
-      render: function (context, hash) {
-
-        /** @type { string[] } */
-        const args = this.args ?? [];
-
-        // console.log(`--> ${name} render context`, context);
-        // console.log(`--> ${name} render hash`, hash);
-        // console.log(`--> ${name} render args`, args);
-
-        const file  = args[0];
-        const path  = path_node.join(CONFIG.dir.includes, file);
-        context.globals.include ??= {};
-        context.globals.include.file = file;
-        context.globals.include.path = path;
-
-        for (const arg of args) {
-          const value = String(liquidEngine.evalValueSync(arg, context) ?? '');
-          if (value) {
-            context.globals.include[arg] = value;
-          }
-        }
-        // const values = args.map((token) => liquidEngine.evalValueSync(token, context));
-
-        // console.log(`--> ${name} render context.globals`, context.globals);
-
-        try {
-          /** @type { unknown } */
-          const ret = liquidEngine.renderFileSync(path, context);
-          return ret
-        }
-        catch (error) {
-          console.error(`${name} Error rendering`, path, error);
-        }
-      },
-    };
-  }
-
-  eleventyConfig.addLiquidTag('include', function (liquidEngine) {
-    return includeTag('include', liquidEngine);
+  eleventyConfig.addCollection('tabs', (collection) => {
+    return collection.getFilteredByGlob('content/tabs/**/*.md');
   });
-
-  eleventyConfig.addLiquidTag('include_cached', function (liquidEngine) {
-    return includeTag('include_cached', liquidEngine);
-  });
-
-  eleventyConfig.addLiquidTag('seo', function (liquidEngine) {
-    return {
-      parse: (tagToken) => {
-        console.log('--> seo parse', tagToken.args);
-      },
-      render: (context, hash) => {
-        // console.log('--> seo render context', context);
-        // console.log('--> seo render hash', hash);
-        return '';
-      },
-    };
-  });
-
 
   eleventyConfig.addTemplateFormats('scss');
-  eleventyConfig.addExtension('scss', {
-    outputFileExtension: 'css',
-    useLayouts: false,
-
-    compile: (content, inputPath) => {
-      console.log('--> scss compile', inputPath);
-
-      let parsed = path_node.parse(inputPath);
-      // Don’t compile file names that start with an underscore
-      if(parsed.name.startsWith('_')) {
-        return;
-      }
-
-      const result = sass.compileString(content, { loadPaths: [ parsed.dir || '.', '_sass', ] }).css;
-
-      // Map dependencies for incremental builds
-      // this.addDependencies(inputPath, result.loadedUrls);
-
-      return () => result;
-      // return async (data) => {
-      //   let content = await this?.defaultRenderer(data);
-      //   return sass.compileString(content, { loadPaths: [ parsed.dir || '.', '_sass', ] }).css;
-      // };
-    },
+  eleventyConfig.addExtension('scss', jeky11ty.sassExtension());
+  eleventyConfig.addDataExtension('yml,yaml', (contents, filePath) => {
+    return jeky11ty.loadYamlData(contents, filePath);
   });
 
+
+  eleventyConfig.addDateParsing((dateValue) => {
+    return jeky11ty.dateParser(dateValue);
+  });
+
+
+  eleventyConfig.addFilter('absolute_url', (pageUrl) => {
+    return jeky11ty.absoluteUrlFilter(pageUrl);
+  });
+
+  eleventyConfig.addFilter('relative_url', (pageUrl) => {
+    return jeky11ty.relativeUrlFilter(pageUrl);
+  });
+
+
+  // Eleventy doesn't have include_cached, so we implement it here
+  eleventyConfig.addLiquidTag('include_cached', function (liquidEngine) {
+    return jeky11ty.includeTag(liquidEngine, CONFIG.dir.includes);
+  });
+  // ...and for consistency we also override include
+  eleventyConfig.addLiquidTag('include', function (liquidEngine) {
+    return jeky11ty.includeTag(liquidEngine, CONFIG.dir.includes);
+  });
+
+
+  eleventyConfig.addLiquidTag('seo', function (liquidEngine) {
+    return jeky11ty.seoTag(liquidEngine);
+  });
+
+
+  // eleventyConfig.addPreprocessor('tabs', '*', (data, content) => {
+  //   console.log('--> addPreprocessor tabs');
+  //   console.log('--> addPreprocessor data', data);
+  //   // return false to skip the template
+  //   // return undefined or nothing to ensure no changes to the input
+  //   // if(data.draft && process.env.ELEVENTY_RUN_MODE === "build") {
+  //   // 	return false;
+  //   // }
+  // });
 
   return CONFIG;
 
